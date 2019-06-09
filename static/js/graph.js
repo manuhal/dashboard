@@ -4,8 +4,22 @@ queue()
 
 function makeGraph(err, salaryData) {
     var ndx = crossfilter(salaryData);
+    
+    
+    showDisciplineSelector(ndx);
     showGenderBalance(ndx);
+    
     dc.renderAll();
+}
+
+
+function showDisciplineSelector(ndx){
+    var dim = ndx.dimension(dc.pluck("discipline"));
+    var group = dim.group();
+    
+    dc.selectMenu("#discipline-selector")
+        .dimension(dim)
+        .group(group);
 }
 
 
@@ -22,9 +36,10 @@ function showGenderBalance(ndx) {
         .transitionDuration(500)
         .x(d3.scale.ordinal())
         .xUnits(dc.units.ordinal)
-        .elasticY(true)
+        // .elasticY(true) //this will cause the Y coor value adjust automatically, so the graph doesn't move. we don't want that in this case
         .xAxisLabel("GENDER")
         .yAxisLabel("TOTAL")
+        // .yAxis().ticks(20);
         .yAxis().ticks(10);
 
 }
