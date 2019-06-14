@@ -4,10 +4,10 @@ queue()
 
 function makeGraph(err, salaryData) {
     var ndx = crossfilter(salaryData);
-    
+
     //convert salaryData to integer (when read from csv, it is )
-    salaryData.forEach(function(d){
-        return parseInt(d.salary);
+    salaryData.forEach(function(d) {
+        d.salary = parseInt(d.salary);
     })
 
 
@@ -34,9 +34,10 @@ function showGenderBalance(ndx) {
     var group = dim.group();
 
     dc.barChart("#gender-balance")
-        .width(500)
-        .height(400)
-        .margins({ top: 20, right: 50, bottom: 30, left: 50 })
+        .width(400)
+        .height(300)
+        // .margins({ top: 20, right: 50, bottom: 30, left: 50 })
+        .margins({top: 10, right: 50, bottom: 30, left: 50})
         .dimension(dim)
         .group(group)
         .transitionDuration(500)
@@ -51,53 +52,52 @@ function showGenderBalance(ndx) {
 
 
 function showAverageSalary(ndx) {
-    var dim = ndx.dimension(dc.pluck("sex"));
+    var dim = ndx.dimension(dc.pluck('sex'));
 
     // p is the accumulator, v is the data 
 
-    function addItem(p, v) {
+    function add_item(p, v) {
         p.count++;
         p.total += v.salary;
-        p.avg = p.total / p.count;
+        p.average = p.total / p.count;
         return p;
     }
 
-    function removeItem(p, v) {
+    function remove_item(p, v) {
         p.count--;
         if (p.count == 0) {
-            p.count = 0;
             p.total = 0;
+            p.average = 0;
         }
         else {
             p.total -= v.salary;
             p.average = p.total / p.count;
         }
         return p;
-
     }
 
-    function initialize() {
-        //to initialize the p
+    function initialise() {
         return { count: 0, total: 0, average: 0 };
     }
 
-    var groupAvgSalaryByGender = dim.group().reduce(addItem, removeItem, initialize);
+    var averageSalaryByGender = dim.group().reduce(add_item, remove_item, initialise);
+    
+    console.log(averageSalaryByGender.all());
 
     dc.barChart("#average-salary")
-        .width(500)
-        .height(400)
-        .margins({ top: 20, right: 50, bottom: 30, left: 50 })
+        .width(400)
+        .height(300)
+        .margins({ top: 10, right: 50, bottom: 30, left: 50 })
         .dimension(dim)
-        .group(groupAvgSalaryByGender)
-        .valueAccessor(function(d){
+        .group(averageSalaryByGender)
+        .valueAccessor(function(d) {
             return d.value.average.toFixed(2);
         })
-        .transitionDuration(1000)
-        .x(d3.scale.ordinal)
+        .transitionDuration(500)
+        .x(d3.scale.ordinal())
         .xUnits(dc.units.ordinal)
+        .elasticY(true)
         .xAxisLabel("Gender")
-        .yAxisLabel("Salary in $")
-        .yAxis().ticks(5);  
-
+        .yAxis().ticks(4);
 
 }
