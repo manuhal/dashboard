@@ -14,6 +14,7 @@ function makeGraph(err, salaryData) {
     showDisciplineSelector(ndx);
     showGenderBalance(ndx);
     showAverageSalary(ndx);
+    showRankDistribution(ndx);
 
     dc.renderAll();
 }
@@ -37,7 +38,7 @@ function showGenderBalance(ndx) {
         .width(400)
         .height(300)
         // .margins({ top: 20, right: 50, bottom: 30, left: 50 })
-        .margins({top: 10, right: 50, bottom: 30, left: 50})
+        .margins({ top: 10, right: 50, bottom: 30, left: 50 })
         .dimension(dim)
         .group(group)
         .transitionDuration(500)
@@ -81,7 +82,7 @@ function showAverageSalary(ndx) {
     }
 
     var averageSalaryByGender = dim.group().reduce(add_item, remove_item, initialise);
-    
+
     console.log(averageSalaryByGender.all());
 
     dc.barChart("#average-salary")
@@ -99,5 +100,59 @@ function showAverageSalary(ndx) {
         .elasticY(true)
         .xAxisLabel("Gender")
         .yAxis().ticks(4);
+
+}
+
+
+
+
+function showRankDistribution(ndx) {
+
+    function rankByGender(dimension, rank) {
+        return dimension.group().reduce(
+            function(p, v) {
+                p.total++;
+                if (v.rank == rank) {
+                    p.match++;
+                }
+                return p;
+            },
+            function(p, v) {
+                p.total--;
+                if (v.rank == rank) {
+                    p.match--;
+                }
+                return p;
+            },
+            function() {
+                return { total: 0, match: 0 };
+            }
+        );
+    }
+
+    var dim = ndx.dimension(dc.pluck("sex"));
+    var profByGender = rankByGender(dim, "Prof");
+    var asstProfByGender = rankByGender(dim, "AsstProf");
+    var assocProfByGender = rankByGender(dim, "AssocProf");
+
+    dc.barChart("#rank-distribution")
+        .width(400)
+        .height(300)
+        .dimension(dim)
+        .group(profByGender, "Prof")
+        .stack(asstProfByGender, "Asst Prof")
+        .stack(assocProfByGender, "Assoc Prof")
+        .valueAccessor(function(d) {
+            if (d.value.total > 0) {
+                return (d.value.match / d.value.total) * 100;
+            }
+            else {
+                return 0;
+            }
+        })
+        .x(d3.scale.ordinal())
+        .xUnits(dc.units.ordinal)
+        .legend(dc.legend().x(320).y(20).itemHeight(15).gap(5))
+        .margins({ top: 10, right: 100, bottom: 30, left: 30 });
 
 }
